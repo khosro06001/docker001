@@ -1,0 +1,51 @@
+# Multi-architecture Dockerfile for slm001 chatbot
+# Supports both AMD64 and ARM64 architectures
+
+FROM python:3.9-slim
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV HF_HOME=/app/cache
+ENV TRANSFORMERS_CACHE=/app/cache
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create app directory
+WORKDIR /app
+
+# Create cache directory
+RUN mkdir -p /app/cache
+
+# Copy requirements first for better caching
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY slm001.py .
+
+# Pre-download the model to reduce startup time
+RUN python -c "from transformers import AutoTokenizer, AutoModelForCausalLM; \
+    tokenizer = AutoTokenizer.from_pretrained('microsoft/DialoGPT-small'); \
+    model = AutoModelForCausalLM.from_pretrained('microsoft/DialoGPT-small'); \
+    print('Model downloaded successfully')"
+
+# Create non-root user for security
+RUN useradd -m -u 1000 chatbot && \
+    chown -R chatbot:chatbot /app
+
+USER chatbot
+
+# Expose port (if needed for future web interface)
+EXPOSE 8080
+
+# Set the default command
+CMD ["python", "slm001.py"]

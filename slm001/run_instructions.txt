@@ -1,0 +1,34 @@
+=== SLM001 Chatbot Deployment Instructions ===
+
+1. On your Jetson Nano (or any ARM64 device), run:
+   docker pull khosro123/slm001-chatbot:latest
+
+2. Run the chatbot:
+   docker run -it --rm khosro123/slm001-chatbot:latest
+
+3. Alternative run with persistent cache:
+   docker run -it --rm -v slm001-cache:/app/cache khosro123/slm001-chatbot:latest
+
+4. To run in detached mode with a custom name:
+   docker run -d --name slm001-chatbot khosro123/slm001-chatbot:latest
+
+5. To attach to a running container:
+   docker exec -it slm001-chatbot /bin/bash
+
+6. To stop the container:
+   docker stop slm001-chatbot
+
+=== Troubleshooting ===
+
+If you encounter issues:
+- Check Docker version: docker --version
+- Check available architectures: docker buildx ls
+- View container logs: docker logs slm001-chatbot
+- Remove and re-pull: docker rmi khosro123/slm001-chatbot:latest && docker pull khosro123/slm001-chatbot:latest
+
+=== Model Information ===
+- Model: microsoft/DialoGPT-small
+- Size: ~117MB
+- Runs on CPU (optimized for Jetson Nano)
+- No internet required after pulling
+

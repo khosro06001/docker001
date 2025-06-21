@@ -1,0 +1,24 @@
+
+mkdir test001/
+cd    test001
+e     test001.py
+e     Dockerfile
+
+FROM python:3.9-slim-buster
+WORKDIR /app
+COPY test001.py .
+### RUN pip install requirements.txt
+### EXPOSE 80  ### expose port 80
+CMD ["python","test001.py"]
+
+
+docker build -t khosro123/test001 .
+### First test locally:
+docker run khosro123/test001
+
+docker login
+
+docker push khosro123/test001
+
+zen hyb.docker.com/
+

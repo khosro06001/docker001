@@ -1,0 +1,10 @@
+ 2030  l
+ 2031  e Dockerfile
+ 2032  l
+ 2033  docker build -t khosro123/test001 .
+ 2034  e Dockerfile
+ 2035  docker build -t khosro123/test001 .
+ 2036  e Dockerfile
+ 2037  docker build -t khosro123/test001 .
+ 2038  history 
+ 2039  history | tail > my-steps.txt

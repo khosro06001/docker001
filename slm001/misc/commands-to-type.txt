@@ -1,0 +1,6 @@
+
+=== DEBIAN 12 ===
+docker login
+docker buildx build --platform linux/amd64,linux/arm64 -t khosro123/my-dualamd64arm64-image:latest . --push
+=== JETSON NANO ===
+docker run khosro123/my-dualamd64arm64-image

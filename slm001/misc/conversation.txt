@@ -1,0 +1,36 @@
+
+Hi Claude:
+
+I have a Debian 12 Linux PC with docker installed.
+
+I have a docker hub account.
+
+And, I have a Jetson Nano with ubuntu 18.04.
+
+I want to write the following app:
+
+slm001.py
+
+A small language model, that acts as a chatbot and interactively answers questions.
+
+It must be in python.
+
+I want to develop it on my Debian 12.
+
+Compile it for AMD64 and ARM64, BOTH.
+
+Push it to docker hub.
+
+From the Jetson Nano side, pull it and run it.
+
+I want to type questions and have it generate an answer.
+
+The language model must be local to the Jetson Nano, that means, it must run locally on the Jetson Nano, and be able to run even when there is not access to network.
+
+Please help.
+
+===
+
+
+
+
