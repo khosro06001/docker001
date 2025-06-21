@@ -36,3 +36,81 @@ What are the command lines for those?
 
 
 ===
+
+(1)
+
+
+# Enable buildx (if not already enabled)
+
+docker buildx rm multiarch-builder
+docker buildx create --name multiarch-builder --use --bootstrap
+
+(2)
+
+# Verify buildx is working and shows available platforms
+docker buildx ls
+
+(3)
+
+### docker buildx build \
+###   --platform linux/amd64,linux/arm64 \
+###   --tag your-dockerhub-username/slm001-enhanced:latest \
+###   --push .
+
+
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  --tag khosro123/slm001-enhanced:latest \
+  --push .
+
+............. MAY TAKE 45 MINUTES AND MORE! .................
+
+(4)
+
+To verify your multi-arch image:
+
+# Check the manifest (shows all architectures)
+###docker buildx imagetools inspect yourusername/slm001-enhanced:latest
+docker buildx imagetools inspect khosro123/slm001-enhanced:latest
+
+OR
+
+# Or if you have manifest-tool installed
+###docker manifest inspect yourusename/slm001-enhanced:latest
+docker manifest inspect khosro123/slm001-enhanced:latest
+
+
+(5)
+
+    On your Debian 12 PC (amd64):
+
+###docker pull yourusername/slm001-enhanced:latest
+###docker run -it --rm -v slm001-cache:/app/cache yourusername/slm001-enhanced:latest
+docker pull khosro123/slm001-enhanced:latest ### OPTIONAL
+docker run -it --rm -v slm001-cache:/app/cache khosro123/slm001-enhanced:latest
+
+(6)
+
+    On your Jetson Nano (arm64):
+
+###docker pull yourusername/slm001-enhanced:latest
+###docker run -it --rm -v slm001-cache:/app/cache yourusername/slm001-enhanced:latest
+docker pull khosro123/slm001-enhanced:latest
+docker run -it --rm -v slm001-cache:/app/cache khosro123/slm001-enhanced:latest
+
+
+
+################################## Nano not good for LLM #############################
+
+Performance Note for Jetson Nano
+
+Since your Jetson Nano has 4GB RAM, I notice your code defaults to DialoGPT-medium (~345MB). You might want to modify the default to DialoGPT-small (~117MB) for better performance on the Jetson by changing this line in slm001.py:
+
+python
+
+# Change from:
+def __init__(self, model_name: str = "microsoft/DialoGPT-medium"):
+
+# To:
+def __init__(self, model_name: str = "microsoft/DialoGPT-small"):
+
