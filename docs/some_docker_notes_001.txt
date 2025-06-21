@@ -1,0 +1,6 @@
+### https://github.com/khosro06001/docker001.git
+
+### rename the local master branch and call it main ###
+git branch -M main
+git remote add origin https://github.com/khosro06001/docker001.git
+

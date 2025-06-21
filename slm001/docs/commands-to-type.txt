@@ -4,3 +4,15 @@ docker login
 docker buildx build --platform linux/amd64,linux/arm64 -t khosro123/my-dualamd64arm64-image:latest . --push
 === JETSON NANO ===
 docker run khosro123/my-dualamd64arm64-image
+
+
+
+====
+
+
+
+docker build -t slm001-test .
+
+docker run -it --rm slm001-test python -c "import transformers; print('Success!')"
+
+

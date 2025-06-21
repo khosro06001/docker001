@@ -1,0 +1,38 @@
+docker build -t slm001-test .
+
+# Test imports
+docker run -it --rm slm001-test python -c "import transformers; print('Transformers imported successfully!')"
+
+# Run the test script
+docker run -it --rm slm001-test python test_local.py
+
+===
+
+
+
+BUILD DOCKER CONTAINER:
+
+docker build -t slm001-enhanced .
+
+TEST WITH BETTER MODEL:
+
+docker run -it --rm -v slm001-cache:/app/cache slm001-enhanced
+
+(I used number 2: best)
+
+===
+
+
+
+docker build -t slm001-enhanced .
+
+The above command only creates an image than runs on my Debian 12 PC, running amd64.
+
+But, I want to also run this on my Jetson Nano (4GB memory), that has an arm64 CPU (and not amd64).
+
+So I guess must cross-build for 2 architectures.
+
+What are the command lines for those?
+
+
+===

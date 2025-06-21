@@ -31,12 +31,7 @@ RUN pip install --upgrade pip && \
 
 # Copy application code
 COPY slm001.py .
-
-# Pre-download the model to reduce startup time
-RUN python -c "from transformers import AutoTokenizer, AutoModelForCausalLM; \
-    tokenizer = AutoTokenizer.from_pretrained('microsoft/DialoGPT-small'); \
-    model = AutoModelForCausalLM.from_pretrained('microsoft/DialoGPT-small'); \
-    print('Model downloaded successfully')"
+COPY test_local.py .
 
 # Create non-root user for security
 RUN useradd -m -u 1000 chatbot && \

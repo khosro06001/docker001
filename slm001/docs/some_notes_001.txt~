@@ -1,0 +1,23 @@
+docker build -t slm001-test .
+
+# Test imports
+docker run -it --rm slm001-test python -c "import transformers; print('Transformers imported successfully!')"
+
+# Run the test script
+docker run -it --rm slm001-test python test_local.py
+
+===
+
+
+
+BUILD DOCKER CONTAINER:
+
+docker build -t slm001-enhanced .
+
+TEST WITH BETTER MODEL:
+
+docker run -it --rm -v slm001-cache:/app/cache slm001-enhanced
+
+(I used number 2: best)
+
+===

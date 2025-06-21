@@ -20,7 +20,7 @@ git config pull.rebase false  # merge  ### IF true, then rebase: over-write...
 ===============================================================================
 git config pull.rebase 
 ===============================================================================
-cd tests
+cd tests/
 git add .
 git commit -m "besmella"
 git pull origin main #### PULL PULL PULL <<<<<<<<<<<<<<<<<<<<
@@ -34,7 +34,7 @@ git pull origin main #### PULL PULL PULL <<<<<<<<<<<<<<<<<<<<
 ===============================================================================
 PUSHING
 ===============================================================================
-cd da01/
+cd tests/
 git add .
 git commit -m "besmella"
 git push -u     origin main
