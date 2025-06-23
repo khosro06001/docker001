@@ -1,0 +1,16 @@
+I have revised and edited Dockerfile + slm001 + requirements ....
+
+.
+
+Can you please now revise the build script to match??
+
+thanks.
+
+.
+
+I am creating the program on my Debian 12 home PC, that has AMD64 and no GPU... AND .... I want to upload it to Docker hub and then pull and run it from my Jetson Nano with 4GB Memory and a GPU.
+
+.
+
+thanks.
+

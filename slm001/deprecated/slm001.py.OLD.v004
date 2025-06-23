@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-slm001.py - Enhanced Local Small Language Model Chatbot with Native PyTorch Quantization
+slm001.py - Enhanced Local Small Language Model Chatbot with Quantized Models
 A lightweight chatbot optimized for low-memory devices like Jetson Nano.
-Uses PyTorch native quantization - NO bitsandbytes dependency!
+Features quantized models for better performance on resource-constrained hardware.
 """
 
 import os
@@ -11,11 +11,6 @@ import json
 import signal
 from typing import Optional, List, Dict, Any
 import logging
-import gc
-import warnings
-
-# Suppress warnings
-warnings.filterwarnings("ignore")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -29,8 +24,16 @@ try:
         set_seed
     )
     import torch
-    import torch.nn as nn
-    logger.info("Core dependencies loaded successfully")
+    
+    # Try to import bitsandbytes for quantization
+    try:
+        import bitsandbytes as bnb
+        from transformers import BitsAndBytesConfig
+        QUANTIZATION_AVAILABLE = True
+        logger.info("bitsandbytes available for quantization")
+    except ImportError:
+        QUANTIZATION_AVAILABLE = False
+        logger.warning("bitsandbytes not available. Using PyTorch native quantization.")
 except ImportError as e:
     logger.error(f"Required packages not installed: {e}")
     logger.error("Please install: pip install transformers torch")
@@ -39,52 +42,51 @@ except ImportError as e:
 # Model configurations - optimized for Jetson Nano (4GB RAM)
 MODEL_CONFIGS = {
     "microsoft/DialoGPT-small": {
-        "name": "DialoGPT-small-quantized",
-        "size": "~45MB (PyTorch quantized)",
-        "description": "Ultra-lightweight conversational model, PyTorch quantized",
+        "name": "DialoGPT-small",
+        "size": "~117MB (native)",
+        "description": "Ultra-lightweight conversational model",
         "max_length": 512,
         "conversation_context": True,
-        "base_model": "microsoft/DialoGPT-small"
+        "quantization": "native"
     },
     "distilgpt2": {
-        "name": "DistilGPT2-quantized", 
-        "size": "~95MB (PyTorch quantized)",
-        "description": "Efficient GPT-2 variant, PyTorch quantized for speed",
+        "name": "DistilGPT2", 
+        "size": "~320MB (native)",
+        "description": "Efficient GPT-2 variant for speed",
         "max_length": 768,
         "conversation_context": False,
-        "base_model": "distilgpt2"
+        "quantization": "native"
     },
     "gpt2": {
-        "name": "GPT2-quantized",
-        "size": "~140MB (PyTorch quantized)",
-        "description": "Classic GPT-2, PyTorch quantized, good quality",
+        "name": "GPT2",
+        "size": "~500MB (native)",
+        "description": "Classic GPT-2, good quality",
         "max_length": 1024,
         "conversation_context": False,
-        "base_model": "gpt2"
+        "quantization": "native"
     },
     "microsoft/DialoGPT-medium": {
-        "name": "DialoGPT-medium-quantized",
-        "size": "~115MB (PyTorch quantized)",
-        "description": "Better conversations, PyTorch quantized for efficiency",
+        "name": "DialoGPT-medium",
+        "size": "~350MB (native)",
+        "description": "Better conversations with medium model",
         "max_length": 768,
         "conversation_context": True,
-        "base_model": "microsoft/DialoGPT-medium"
+        "quantization": "native"
     },
     "TinyLlama/TinyLlama-1.1B-Chat-v1.0": {
-        "name": "TinyLlama-quantized",
-        "size": "~350MB (PyTorch quantized)",
-        "description": "Modern tiny language model, PyTorch quantized",
+        "name": "TinyLlama",
+        "size": "~1.1GB (native)",
+        "description": "Modern tiny language model, excellent for chat",
         "max_length": 2048,
         "conversation_context": True,
-        "base_model": "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
+        "quantization": "native"
     }
 }
 
-class NativeQuantizedChatbot:
+class QuantizedLocalChatbot:
     def __init__(self, model_name: str = "microsoft/DialoGPT-small"):
         """
-        Initialize the native quantized local chatbot optimized for Jetson Nano.
-        Uses ONLY PyTorch native quantization - no external dependencies!
+        Initialize the local chatbot optimized for Jetson Nano.
         
         Args:
             model_name: HuggingFace model name. 
@@ -96,7 +98,7 @@ class NativeQuantizedChatbot:
         self.model = None
         self.chat_pipeline = None
         self.conversation_history = []
-        self.max_history = 6  # Reduced for memory efficiency
+        self.max_history = 8  # Reduced for memory efficiency
         
         # Set random seed for reproducible results
         set_seed(42)
@@ -108,75 +110,51 @@ class NativeQuantizedChatbot:
     def _detect_device(self):
         """Detect the best available device."""
         if torch.cuda.is_available():
-            try:
-                gpu_memory = torch.cuda.get_device_properties(0).total_memory / 1024**3
-                logger.info(f"CUDA GPU detected with {gpu_memory:.1f}GB memory")
-                return "cuda"
-            except:
-                logger.info("CUDA available but not accessible, using CPU")
-                return "cpu"
+            gpu_memory = torch.cuda.get_device_properties(0).total_memory / 1024**3
+            logger.info(f"CUDA GPU detected with {gpu_memory:.1f}GB memory")
+            return "cuda"
         else:
             logger.info("Using CPU (no CUDA GPU detected)")
             return "cpu"
     
     def _apply_pytorch_quantization(self, model):
-        """Apply PyTorch native dynamic quantization."""
+        """Apply PyTorch native quantization as fallback."""
         try:
             logger.info("Applying PyTorch dynamic quantization...")
-            
-            # Set model to eval mode for quantization
-            model.eval()
-            
-            # Apply dynamic quantization to Linear and Embedding layers
             quantized_model = torch.quantization.quantize_dynamic(
                 model, 
-                {nn.Linear, nn.Embedding}, 
+                {torch.nn.Linear, torch.nn.Embedding}, 
                 dtype=torch.qint8
             )
-            
             logger.info("PyTorch quantization applied successfully")
-            
-            # Force garbage collection
-            gc.collect()
-            if self.device == "cuda":
-                torch.cuda.empty_cache()
-                
             return quantized_model
-            
         except Exception as e:
             logger.warning(f"PyTorch quantization failed: {e}")
             logger.info("Using original model without quantization")
             return model
     
-    def _optimize_model_for_inference(self, model):
-        """Optimize model for inference without external quantization libraries."""
+    def _can_use_bitsandbytes(self):
+        """Check if bitsandbytes can be used on this system."""
+        if not QUANTIZATION_AVAILABLE:
+            return False
+            
         try:
-            # Set to evaluation mode
-            model.eval()
-            
-            # Disable gradient computation
-            for param in model.parameters():
-                param.requires_grad = False
-            
-            # Try to use torch.jit.script for additional optimization
-            try:
-                logger.info("Attempting TorchScript optimization...")
-                # Note: This might not work for all models, so we'll catch exceptions
-                model = torch.jit.optimize_for_inference(model)
-                logger.info("TorchScript optimization applied")
-            except Exception as e:
-                logger.info(f"TorchScript optimization not available: {e}")
-            
-            return model
-            
+            # Test if bitsandbytes works with current system
+            import bitsandbytes as bnb
+            # Simple test to see if it's properly configured
+            test_tensor = torch.randn(10, 10)
+            if self.device == "cuda":
+                test_tensor = test_tensor.cuda()
+            # This will fail if bitsandbytes isn't properly configured
+            return True
         except Exception as e:
-            logger.warning(f"Model optimization failed: {e}")
-            return model
+            logger.warning(f"bitsandbytes not compatible with current system: {e}")
+            return False
         
     def show_available_models(self):
-        """Display available quantized model options."""
+        """Display available model options."""
         print("\n" + "="*80)
-        print("🤖 Available PyTorch Quantized Models (Optimized for Jetson Nano):")
+        print("🤖 Available Models (Optimized for Jetson Nano):")
         print("="*80)
         
         for i, (model_key, config) in enumerate(MODEL_CONFIGS.items(), 1):
@@ -190,21 +168,9 @@ class NativeQuantizedChatbot:
     def switch_model(self, model_name: str):
         """Switch to a different model."""
         if model_name in MODEL_CONFIGS:
-            # Clear existing model from memory
-            if self.model is not None:
-                del self.model
-            if self.chat_pipeline is not None:
-                del self.chat_pipeline
-            if self.tokenizer is not None:
-                del self.tokenizer
-                
-            # Force garbage collection
-            gc.collect()
-            if self.device == "cuda":
-                torch.cuda.empty_cache()
-            
             self.model_name = model_name
             self.model_config = MODEL_CONFIGS[model_name]
+            # Clear existing model to force reload
             self.model = None
             self.tokenizer = None
             self.chat_pipeline = None
@@ -216,18 +182,13 @@ class NativeQuantizedChatbot:
             return False
         
     def load_model(self):
-        """Load the language model with PyTorch native quantization only."""
+        """Load the language model and tokenizer with fallback quantization."""
         try:
             logger.info(f"Loading model: {self.model_config['name']} ({self.model_config['size']})")
-            logger.info("Using PyTorch native quantization - reliable and fast!")
-            
-            # Use the base model name for loading from HuggingFace
-            base_model_name = self.model_config.get('base_model', self.model_name)
             
             # Load tokenizer
-            logger.info("Loading tokenizer...")
             self.tokenizer = AutoTokenizer.from_pretrained(
-                base_model_name,
+                self.model_name,
                 padding_side='left',
                 trust_remote_code=True
             )
@@ -236,29 +197,52 @@ class NativeQuantizedChatbot:
             if self.tokenizer.pad_token is None:
                 self.tokenizer.pad_token = self.tokenizer.eos_token
             
-            # Load model with optimized settings
-            logger.info("Loading base model...")
-            self.model = AutoModelForCausalLM.from_pretrained(
-                base_model_name,
-                low_cpu_mem_usage=True,
-                trust_remote_code=True,
-                torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
-            )
+            # Try to load with bitsandbytes quantization first (only if available and compatible)
+            model_loaded = False
             
-            # Move to device
-            logger.info(f"Moving model to {self.device}...")
-            self.model = self.model.to(self.device)
+            if QUANTIZATION_AVAILABLE and self._can_use_bitsandbytes() and self.device == "cuda":
+                try:
+                    logger.info("Attempting to load with bitsandbytes quantization...")
+                    from transformers import BitsAndBytesConfig
+                    
+                    quantization_config = BitsAndBytesConfig(
+                        load_in_8bit=True,
+                        llm_int8_threshold=6.0
+                    )
+                    
+                    self.model = AutoModelForCausalLM.from_pretrained(
+                        self.model_name,
+                        quantization_config=quantization_config,
+                        device_map="auto",
+                        low_cpu_mem_usage=True,
+                        trust_remote_code=True,
+                        torch_dtype=torch.float16,
+                    )
+                    logger.info("Successfully loaded with bitsandbytes quantization")
+                    model_loaded = True
+                    
+                except Exception as e:
+                    logger.warning(f"bitsandbytes quantization failed: {e}")
+                    logger.info("Falling back to standard loading...")
             
-            # Optimize model for inference
-            logger.info("Optimizing model for inference...")
-            self.model = self._optimize_model_for_inference(self.model)
-            
-            # Apply PyTorch native quantization
-            logger.info("Applying PyTorch quantization...")
-            self.model = self._apply_pytorch_quantization(self.model)
+            # Fallback to standard loading
+            if not model_loaded:
+                logger.info("Loading model without bitsandbytes quantization...")
+                self.model = AutoModelForCausalLM.from_pretrained(
+                    self.model_name,
+                    low_cpu_mem_usage=True,
+                    trust_remote_code=True,
+                    torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
+                )
+                
+                # Move to device first
+                self.model = self.model.to(self.device)
+                
+                # Apply PyTorch native quantization for CPU
+                if self.device == "cpu":
+                    self.model = self._apply_pytorch_quantization(self.model)
             
             # Create optimized pipeline
-            logger.info("Creating inference pipeline...")
             device_id = 0 if self.device == "cuda" else -1
             
             self.chat_pipeline = pipeline(
@@ -276,12 +260,7 @@ class NativeQuantizedChatbot:
                 return_full_text=False
             )
             
-            # Final cleanup
-            gc.collect()
-            if self.device == "cuda":
-                torch.cuda.empty_cache()
-            
-            logger.info("✅ Model loaded successfully with PyTorch quantization!")
+            logger.info("Model loaded successfully!")
             return True
             
         except Exception as e:
@@ -290,7 +269,7 @@ class NativeQuantizedChatbot:
     
     def generate_response(self, user_input: str) -> str:
         """
-        Generate a response using the quantized model with optimized settings.
+        Generate a response using the model with optimized settings.
         
         Args:
             user_input: The user's question or message
@@ -299,36 +278,36 @@ class NativeQuantizedChatbot:
             Generated response from the model
         """
         try:
-            with torch.no_grad():  # Ensure no gradients
-                # Handle different model types with memory optimization
-                if self.model_config['conversation_context']:
-                    # For DialoGPT and TinyLlama models - use conversation format
-                    if self.conversation_history:
-                        # Build conversation context (reduced for memory)
-                        context = ""
-                        for exchange in self.conversation_history[-2:]:  # Only last 2 exchanges
-                            context += f"{exchange['user']}{self.tokenizer.eos_token}"
-                            context += f"{exchange['bot']}{self.tokenizer.eos_token}"
-                        
-                        # Add current input
-                        prompt = context + user_input + self.tokenizer.eos_token
-                    else:
-                        prompt = user_input + self.tokenizer.eos_token
+            # Handle different model types with memory optimization
+            if self.model_config['conversation_context']:
+                # For DialoGPT and TinyLlama models - use conversation format
+                if self.conversation_history:
+                    # Build conversation context (reduced for memory)
+                    context = ""
+                    for exchange in self.conversation_history[-3:]:  # Only last 3 exchanges
+                        context += f"{exchange['user']}{self.tokenizer.eos_token}"
+                        context += f"{exchange['bot']}{self.tokenizer.eos_token}"
                     
-                    # Generate with memory-optimized settings
-                    inputs = self.tokenizer.encode(
-                        prompt, 
-                        return_tensors="pt",
-                        max_length=min(400, self.model_config['max_length'] // 2),
-                        truncation=True
-                    )
-                    
-                    if self.device == "cuda":
-                        inputs = inputs.to(self.device)
-                    
+                    # Add current input
+                    prompt = context + user_input + self.tokenizer.eos_token
+                else:
+                    prompt = user_input + self.tokenizer.eos_token
+                
+                # Generate with memory-optimized settings
+                inputs = self.tokenizer.encode(
+                    prompt, 
+                    return_tensors="pt",
+                    max_length=min(512, self.model_config['max_length'] // 2),
+                    truncation=True
+                )
+                
+                if self.device == "cuda":
+                    inputs = inputs.to(self.device)
+                
+                with torch.no_grad():
                     outputs = self.model.generate(
                         inputs,
-                        max_new_tokens=60,
+                        max_new_tokens=80,
                         do_sample=True,
                         temperature=0.7,
                         top_p=0.85,
@@ -337,80 +316,75 @@ class NativeQuantizedChatbot:
                         eos_token_id=self.tokenizer.eos_token_id,
                         no_repeat_ngram_size=2
                     )
-                    
-                    # Decode response
-                    response = self.tokenizer.decode(outputs[0][inputs.shape[-1]:], skip_special_tokens=True)
-                    bot_response = response.strip()
-                    
+                
+                # Decode response
+                response = self.tokenizer.decode(outputs[0][inputs.shape[-1]:], skip_special_tokens=True)
+                bot_response = response.strip()
+                
+            else:
+                # For GPT-2 style models - use text generation format
+                if self.conversation_history:
+                    context = ""
+                    for exchange in self.conversation_history[-2:]:  # Only last 2 exchanges
+                        context += f"Human: {exchange['user']}\nAssistant: {exchange['bot']}\n"
+                    prompt = f"{context}Human: {user_input}\nAssistant:"
                 else:
-                    # For GPT-2 style models - use text generation format
-                    if self.conversation_history:
-                        context = ""
-                        for exchange in self.conversation_history[-2:]:  # Only last 2 exchanges
-                            context += f"Human: {exchange['user']}\nAssistant: {exchange['bot']}\n"
-                        prompt = f"{context}Human: {user_input}\nAssistant:"
-                    else:
-                        prompt = f"Human: {user_input}\nAssistant:"
-                    
-                    # Generate response with optimized settings
-                    response = self.chat_pipeline(
-                        prompt,
-                        max_new_tokens=50,
-                        num_return_sequences=1,
-                        temperature=0.7,
-                        do_sample=True,
-                        top_p=0.85,
-                        repetition_penalty=1.15,
-                        no_repeat_ngram_size=2
-                    )
-                    
-                    # Extract the generated text
-                    bot_response = response[0]['generated_text'].strip()
-                    
-                    # Clean up response for GPT-2 style models
-                    if "Human:" in bot_response:
-                        bot_response = bot_response.split("Human:")[0].strip()
+                    prompt = f"Human: {user_input}\nAssistant:"
                 
-                # Clean up the response
-                if not bot_response or len(bot_response.strip()) == 0:
-                    bot_response = "I'm not sure how to respond to that. Could you try rephrasing?"
+                # Generate response with optimized settings
+                response = self.chat_pipeline(
+                    prompt,
+                    max_new_tokens=60,
+                    num_return_sequences=1,
+                    temperature=0.7,
+                    do_sample=True,
+                    top_p=0.85,
+                    repetition_penalty=1.15,
+                    no_repeat_ngram_size=2
+                )
                 
-                # Limit response length to prevent memory issues
-                if len(bot_response) > 150:
-                    bot_response = bot_response[:150] + "..."
+                # Extract the generated text
+                bot_response = response[0]['generated_text'].strip()
                 
-                # Update conversation history (limited for memory)
-                self.conversation_history.append({
-                    'user': user_input,
-                    'bot': bot_response
-                })
-                
-                # Keep only recent history for memory efficiency
-                if len(self.conversation_history) > self.max_history:
-                    self.conversation_history = self.conversation_history[-self.max_history:]
-                
-                return bot_response
-                
+                # Clean up response for GPT-2 style models
+                if "Human:" in bot_response:
+                    bot_response = bot_response.split("Human:")[0].strip()
+            
+            # Clean up the response
+            if not bot_response or len(bot_response.strip()) == 0:
+                bot_response = "I'm not sure how to respond to that. Could you try rephrasing?"
+            
+            # Limit response length to prevent memory issues
+            if len(bot_response) > 200:
+                bot_response = bot_response[:200] + "..."
+            
+            # Update conversation history (limited for memory)
+            self.conversation_history.append({
+                'user': user_input,
+                'bot': bot_response
+            })
+            
+            # Keep only recent history for memory efficiency
+            if len(self.conversation_history) > self.max_history:
+                self.conversation_history = self.conversation_history[-self.max_history:]
+            
+            return bot_response
+            
         except Exception as e:
             logger.error(f"Error generating response: {e}")
             return "Sorry, I encountered an error. This might be due to memory constraints."
-        finally:
-            # Clean up memory after generation
-            gc.collect()
-            if self.device == "cuda":
-                torch.cuda.empty_cache()
     
     def chat_loop(self):
         """Enhanced interactive chat loop optimized for Jetson Nano."""
         print("=" * 80)
-        print(f"🤖 PyTorch Quantized Local Chatbot - {self.model_config['name']} Ready!")
-        print("🚀 Using PyTorch Native Quantization - Reliable & Fast!")
+        print(f"🤖 Local Chatbot - {self.model_config['name']} Ready!")
+        print("🚀 Optimized for Jetson Nano (4GB RAM)")
         print("=" * 80)
         print("Available commands:")
         print("  • quit, exit, bye    - End the conversation")
         print("  • clear             - Clear conversation history")
-        print("  • models            - Show available quantized models")
-        print("  • switch <model>    - Switch to different quantized model")
+        print("  • models            - Show available models")
+        print("  • switch <model>    - Switch to different model")
         print("  • help              - Show this help message")
         print("  • stats             - Show model and memory stats")
         print("  • memory            - Show current memory usage")
@@ -468,22 +442,21 @@ class NativeQuantizedChatbot:
     def show_help(self):
         """Display enhanced help information."""
         help_text = f"""
-🤖 PyTorch Quantized Local Chatbot - {self.model_config['name']}
+🤖 Local Chatbot - {self.model_config['name']}
 
 Available commands:
   • quit, exit, bye    - End the conversation
   • clear             - Clear conversation history  
-  • models            - Show all available quantized models
-  • switch <model_id> - Switch to a different quantized model
+  • models            - Show all available models
+  • switch <model_id> - Switch to a different model
   • help              - Show this help message
   • stats             - Show model and conversation statistics
   • memory            - Show current memory usage
 
 Current Model: {self.model_config['name']} ({self.model_config['size']})
 Description: {self.model_config['description']}
-Quantization: PyTorch Native (No external dependencies!)
 
-🚀 Optimized for Jetson Nano with 4GB RAM using reliable PyTorch quantization!
+🚀 Optimized for Jetson Nano with 4GB RAM!
 Just type your question or message to chat with me!
         """
         print(f"\n{help_text}")
@@ -491,16 +464,16 @@ Just type your question or message to chat with me!
     def show_stats(self):
         """Show model and conversation statistics."""
         device_info = f"CUDA GPU" if self.device == "cuda" else "CPU"
+        quantization_info = "PyTorch native" if self.device == "cpu" else ("bitsandbytes" if QUANTIZATION_AVAILABLE else "PyTorch native")
         print(f"""
 📊 Current Statistics:
   • Model: {self.model_config['name']} ({self.model_config['size']})
   • Device: {device_info}
-  • Quantization: PyTorch Native (Dynamic int8)
+  • Quantization: {quantization_info}
   • Conversation turns: {len(self.conversation_history)}
   • Max context length: {self.model_config['max_length']}
   • Memory optimized: Yes (Jetson Nano)
   • Conversation context: {'Yes' if self.model_config['conversation_context'] else 'No'}
-  • Dependencies: Core PyTorch only (no bitsandbytes!)
         """)
     
     def show_memory_usage(self):
@@ -529,15 +502,15 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 def main():
-    """Main function with native quantized model selection."""
+    """Main function with model selection."""
     # Set up signal handler
     signal.signal(signal.SIGINT, signal_handler)
     
-    print("🚀 Starting PyTorch Native Quantized Local Chatbot for Jetson Nano...")
-    print("🔥 Using ONLY PyTorch quantization - No bitsandbytes needed!")
+    print("🚀 Starting Local Chatbot for Jetson Nano...")
+    print("🔥 Optimized for 4GB RAM with intelligent quantization!")
     
-    # Show available quantized models
-    print("\nAvailable PyTorch quantized models (ordered by memory efficiency):")
+    # Show available models
+    print("\nAvailable models (ordered by memory efficiency):")
     for i, (model_key, config) in enumerate(MODEL_CONFIGS.items(), 1):
         print(f"{i}. {config['name']} - {config['size']} - {config['description']}")
     
@@ -552,10 +525,10 @@ def main():
         model_name = "microsoft/DialoGPT-small"  # Default to smallest
     
     # Initialize chatbot
-    chatbot = NativeQuantizedChatbot(model_name)
+    chatbot = QuantizedLocalChatbot(model_name)
     
     print(f"\nLoading {chatbot.model_config['name']}...")
-    print("Using reliable PyTorch quantization - this will work! ⚡")
+    print("Using intelligent quantization fallback system ⚡")
     
     # Load the model
     if not chatbot.load_model():

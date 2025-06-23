@@ -1,0 +1,53 @@
+# Core PyTorch and Transformers - essential dependencies
+# Using more flexible version constraints for better compatibility
+torch>=1.9.0,<3.0.0
+transformers>=4.20.0,<5.0.0
+tokenizers>=0.12.0,<1.0.0
+
+# Core dependencies with version constraints
+numpy>=1.21.0,<2.0.0
+requests>=2.25.0,<3.0.0
+tqdm>=4.62.0,<5.0.0
+packaging>=21.0,<24.0
+filelock>=3.7.0,<4.0.0
+huggingface-hub>=0.8.0,<1.0.0
+pyyaml>=5.4.0,<7.0.0
+regex>=2021.8.0,<2024.0.0
+sacremoses>=0.0.45,<1.0.0
+safetensors>=0.3.0,<1.0.0
+
+# System monitoring (optional but recommended for Jetson Nano)
+psutil>=5.8.0,<6.0.0
+
+# Additional optimizations for ARM64/Jetson
+scipy>=1.7.0,<2.0.0
+
+# Quantization support (optional - will be handled gracefully if not available)
+# accelerate is more stable across different architectures
+accelerate>=0.16.0,<1.0.0
+
+# Additional dependencies that might be needed
+# These are often pulled in by transformers but being explicit helps
+typing-extensions>=4.0.0,<5.0.0
+sympy>=1.9.0,<2.0.0
+
+# Optional: For better ONNX support if needed later
+# onnx>=1.12.0,<2.0.0
+# onnxruntime>=1.12.0,<2.0.0
+
+# Note: bitsandbytes is NOT included in requirements.txt because:
+# 1. It may not be compatible with all CPU architectures
+# 2. It requires specific system configurations (CUDA toolkit, etc.)
+# 3. The application has proper fallback to PyTorch native quantization
+# 4. Installation often fails on ARM64/Jetson devices
+# 
+# If you want to try bitsandbytes on a compatible system, install it separately:
+# For CUDA systems: pip install bitsandbytes>=0.37.0
+# For newer versions: pip install bitsandbytes>=0.41.0
+#
+# The application will automatically detect and use it if available,
+# otherwise it will fall back to PyTorch native quantization.
+
+# Development/debugging tools (uncomment if needed)
+# ipython>=7.0.0,<9.0.0
+# jupyter>=1.0.0,<2.0.0

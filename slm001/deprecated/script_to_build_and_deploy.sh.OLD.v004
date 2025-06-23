@@ -1,0 +1,145 @@
+#!/bin/bash
+
+# Streamlined Docker build and deployment script for slm001 quantized chatbot
+set -e
+
+# Configuration
+DOCKER_USERNAME="khosro123"  # Replace with your Docker Hub username
+IMAGE_NAME="slm001-quantized-chatbot"
+TAG="latest"
+FULL_IMAGE_NAME="${DOCKER_USERNAME}/${IMAGE_NAME}:${TAG}"
+
+# Colors
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+print_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
+print_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
+print_error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
+
+# Check requirements
+check_requirements() {
+    print_info "Checking requirements..."
+    
+    # Check Docker
+    command -v docker >/dev/null 2>&1 || print_error "Docker not installed"
+    docker info >/dev/null 2>&1 || print_error "Docker not running"
+    
+    # Check buildx
+    docker buildx version >/dev/null 2>&1 || print_error "Docker buildx not available"
+    
+    # Check required files
+    for file in slm001.py requirements.txt; do
+        [ -f "$file" ] || print_error "Missing file: $file"
+    done
+    
+    # Check for Dockerfile
+    if [ -f "Dockerfile.txt" ]; then
+        DOCKERFILE="Dockerfile.txt"
+    elif [ -f "Dockerfile" ]; then
+        DOCKERFILE="Dockerfile"
+    else
+        print_error "No Dockerfile found"
+    fi
+    
+    print_success "All requirements met"
+}
+
+# Setup multi-arch builder
+setup_builder() {
+    print_info "Setting up multi-architecture builder..."
+    docker buildx create --name quantized-builder --use --bootstrap 2>/dev/null || true
+    docker buildx use quantized-builder
+    print_success "Builder setup complete"
+}
+
+# Build and push image
+build_and_push() {
+    print_info "Building quantized chatbot for AMD64 and ARM64..."
+    print_info "Image: $FULL_IMAGE_NAME"
+    print_info "Using: $DOCKERFILE"
+    
+    # Build for multiple architectures and push
+    docker buildx build \
+        --platform linux/amd64,linux/arm64 \
+        --tag "$FULL_IMAGE_NAME" \
+        --tag "${DOCKER_USERNAME}/${IMAGE_NAME}:quantized" \
+        --tag "${DOCKER_USERNAME}/${IMAGE_NAME}:jetson" \
+        --file "$DOCKERFILE" \
+        --push \
+        .
+    
+    print_success "Multi-arch build completed and pushed"
+}
+
+# Verify image
+verify_image() {
+    print_info "Verifying image..."
+    docker buildx imagetools inspect "$FULL_IMAGE_NAME"
+    print_success "Image verification complete"
+}
+
+# Generate run instructions
+create_instructions() {
+    cat > run_instructions.txt << EOF
+# Quick Start Guide - SLM001 Quantized Chatbot
+
+## Run on Jetson Nano:
+docker pull ${DOCKER_USERNAME}/${IMAGE_NAME}:jetson
+docker run -it --rm ${DOCKER_USERNAME}/${IMAGE_NAME}:jetson
+
+## Run on other devices:
+docker pull ${FULL_IMAGE_NAME}
+docker run -it --rm ${FULL_IMAGE_NAME}
+
+## Available Commands in Chatbot:
+- models          : Show available quantized models
+- switch <model>  : Change model (e.g., "switch distilgpt2")
+- stats          : Show model statistics
+- memory         : Show memory usage
+- clear          : Clear conversation
+- quit           : Exit
+
+## Models Available:
+- DialoGPT-small  : ~117MB (recommended for Jetson Nano)
+- DistilGPT2      : ~320MB
+- GPT2            : ~500MB
+- DialoGPT-medium : ~350MB  
+- TinyLlama-1.1B  : ~1.1GB
+
+## Features:
+✅ Intelligent quantization fallback (bitsandbytes → PyTorch native)
+✅ Optimized for 4GB RAM devices
+✅ Real-time model switching
+✅ Memory-efficient conversation handling
+EOF
+    
+    print_success "Instructions saved to run_instructions.txt"
+}
+
+# Main execution
+main() {
+    print_info "🚀 Starting build process for quantized chatbot..."
+    
+    check_requirements
+    setup_builder
+    
+    # Login to Docker Hub
+    print_info "Login to Docker Hub (username: $DOCKER_USERNAME)"
+    docker login -u "$DOCKER_USERNAME"
+    
+    build_and_push
+    verify_image
+    create_instructions
+    
+    print_success "🎉 Build complete!"
+    print_success "Images available:"
+    print_success "  • ${FULL_IMAGE_NAME}"
+    print_success "  • ${DOCKER_USERNAME}/${IMAGE_NAME}:quantized"
+    print_success "  • ${DOCKER_USERNAME}/${IMAGE_NAME}:jetson"
+    print_info "📖 See run_instructions.txt for usage"
+}
+
+main "$@"

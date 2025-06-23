@@ -1,0 +1,48 @@
+I'll update the build and deploy script to reflect the new quantized features and optimizations in the revised slm001.py and Dockerfile.I've updated the build and deployment script to match the new quantized features in your revised slm001.py. Here are the key improvements:
+
+## Major Updates:
+
+### 🔥 **Quantization-Focused Features:**
+- Updated image names to reflect quantization (`slm001-quantized-chatbot`)
+- Added multiple tags: `latest`, `quantized`, `jetson-nano`
+- Highlighted quantization features (4-bit, 8-bit support)
+- Listed all available quantized models with their sizes
+
+### 🚀 **Enhanced Build Process:**
+- Added file validation to ensure all required files exist
+- Auto-creates `requirements.txt` with quantization dependencies
+- Includes bitsandbytes and other quantization libraries
+- Better error handling and status reporting
+
+### 🧪 **Testing & Verification:**
+- Local testing capability to verify dependencies
+- Comprehensive test script (`test_quantized_chatbot.sh`)
+- Multi-step verification process
+
+### 📖 **Comprehensive Documentation:**
+- Detailed markdown instructions (`run_instructions.md`)
+- Performance expectations table for different devices
+- Memory optimization tips for Jetson Nano
+- Troubleshooting section with common issues
+- Model switching examples and commands
+
+### 💾 **Jetson Nano Optimizations:**
+- Specific memory limit recommendations
+- Jetson-specific Docker tag
+- Performance tuning suggestions
+- Resource usage monitoring commands
+
+### 🎯 **Key Features Highlighted:**
+- Real-time model switching capability
+- Memory usage monitoring
+- Persistent cache options
+- Multiple quantized model options (30MB to 280MB)
+
+The script now properly reflects that your chatbot supports:
+- **Ultra-lightweight models** (DialoGPT-small-4bit at ~30MB)
+- **Memory-efficient quantization** (4-bit and 8-bit)
+- **Real-time model switching** during conversations
+- **Optimized performance** for 4GB RAM devices like Jetson Nano
+
+You can now run this script to build and deploy your quantized chatbot with full multi-architecture support!
+

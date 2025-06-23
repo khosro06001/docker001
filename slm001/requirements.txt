@@ -1,14 +1,48 @@
-torch>=1.9.0
-transformers>=4.20.0
-tokenizers>=0.12.0
-numpy>=1.21.0
-requests>=2.25.0
-tqdm>=4.62.0
-packaging>=21.0
-filelock>=3.7.0
-huggingface-hub>=0.8.0
-pyyaml>=5.4.0
-regex>=2021.8.0
-sacremoses>=0.0.45
-accelerate>=0.16.0
-safetensors>=0.3.0
+# Core PyTorch and Transformers - essential dependencies
+# Using flexible version constraints for better compatibility
+# NO bitsandbytes - using PyTorch native quantization only!
+torch>=1.9.0,<3.0.0
+transformers>=4.20.0,<5.0.0
+tokenizers>=0.12.0,<1.0.0
+
+# Core dependencies with version constraints
+numpy>=1.21.0,<2.0.0
+requests>=2.25.0,<3.0.0
+tqdm>=4.62.0,<5.0.0
+packaging>=21.0,<24.0
+filelock>=3.7.0,<4.0.0
+huggingface-hub>=0.8.0,<1.0.0
+pyyaml>=5.4.0,<7.0.0
+regex>=2021.8.0,<2024.0.0
+sacremoses>=0.0.45,<1.0.0
+safetensors>=0.3.0,<1.0.0
+
+# System monitoring (optional but recommended for Jetson Nano)
+psutil>=5.8.0,<6.0.0
+
+# Additional optimizations for ARM64/Jetson
+scipy>=1.7.0,<2.0.0
+
+# Acceleration support - more stable than bitsandbytes
+accelerate>=0.16.0,<1.0.0
+
+# Additional dependencies that might be needed
+typing-extensions>=4.0.0,<5.0.0
+sympy>=1.9.0,<2.0.0
+
+# NOTE: bitsandbytes is INTENTIONALLY EXCLUDED because:
+# 1. It causes compatibility issues on many systems
+# 2. It requires specific CUDA/CPU configurations
+# 3. It's not reliable across different architectures
+# 4. PyTorch native quantization is more reliable and works everywhere
+#
+# This implementation uses ONLY PyTorch native quantization:
+# - torch.quantization.quantize_dynamic()
+# - Works on CPU and GPU
+# - No external dependencies
+# - Reliable across all platforms
+# - Sufficient for Jetson Nano optimization
+
+# Development/debugging tools (uncomment if needed)
+# ipython>=7.0.0,<9.0.0
+# jupyter>=1.0.0,<2.0.0
