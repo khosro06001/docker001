@@ -1,0 +1,34 @@
+To download and use nvidia-docker on Debian, you'll need to install
+the NVIDIA Container Toolkit after installing Docker and NVIDIA
+drivers. The toolkit includes the necessary tools and configurations
+to enable GPU support within Docker containers.
+
+Here's a breakdown of the process:
+
+1. Install Docker:
+
+    Follow the official Docker documentation for Debian to install Docker Engine.
+    This typically involves adding the Docker repository, installing the necessary packages, and starting the Docker service. 
+
+2. Install NVIDIA Drivers:
+
+    Install the appropriate NVIDIA drivers for your system. You can do this using your distribution's package manager (e.g., apt).
+    For example, on Debian, you can use sudo apt install nvidia-driver nvidia-smi nvidia-driver.
+
+
+
+    You may need to reboot your system after installing the drivers.
+    You can verify the installation by running nvidia-smi. 
+
+3. Install NVIDIA Container Toolkit:
+Add the NVIDIA repository.
+
+===
+
+install docker
+
+apt install nvidia-driver nvidia-smi nvidia-driver
+
+systemctl --user start docker-desktop
+
+===

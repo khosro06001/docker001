@@ -1,0 +1,109 @@
+
+I am developing a Python3 application with the help from AI.
+I am developing it on the AMD64 PC, that has no GPU.
+Using docker buildx.
+Uploading to Docker Hub.
+Pulling from and running on ARM64 Jetson Nano, that has a GPU, using nvidia-docker.
+
+===
+
+I want to use the following base image:
+
+nvcr.io/nvidia/14t-ml
+
+for Machine Learning 
+
+===
+Application:
+
+First, it is just a hello-word.
+
+Next it is going to be image captioning. 
+
+===
+===
+===
+
+I have an ARM64 Nvidia Jetson Nano 4GB memory, 64 GB microSD card.IMPORTANTLY it has ONE GPU.
+The box says:
+NVIDIA Maxwell GPU, Quad Core ARM Cortex-A57 Processor, and 4GB LPDDR4 Memory
+Nvidia JetPack Software is installed on the microSD card.
+Apparently, it is based on Ubuntu 18.04, and it should not be updated to a newer ubuntu version, because the NVIDIA specific pieces of software might stop working.
+
+===
+
+$ lshw
+aiad
+
+    description: Computer
+    product: NVIDIA Jetson Nano Developer Kit
+    serial: 1424621023450
+    width: 64 bits
+    capabilities: smp cp15_barrier setend swp
+  *-core
+       description: Motherboard
+       physical id: 0
+     *-cpu:0
+          description: CPU
+          product: cpu
+          physical id: 0
+          bus info: cpu@0
+          size: 1479MHz
+          capacity: 1479MHz
+          capabilities: fp asimd evtstrm aes pmull sha1 sha2 crc32 cpufreq
+     *-cpu:1 ...
+     *-cpu:2 ...
+     *-cpu:3 ...
+     *-cpu:4 DISABLED ...
+     *-cpu:5 DISABLED ...
+     *-memory
+          description: System memory
+          physical id: 7
+          size: 3955MiB 
+     *-pci
+          description: PCI bridge
+          product: NVIDIA Corporation ...
+        *-network
+             description: Ethernet interface
+             product: RTL8111/8168/8411 PCI Express Gigabit Ethernet Controller ... 
+
+===
+$ lsmod | grep gpu
+nvgpu 1597641 18
+===
+
+
+
+===
+===
+===
+
+I have a AMD64 Linux Debian 12 PC at home, with NO*** GPU:
+
+$ lshw | head -n 50
+family
+
+    description: Computer
+    width: 64 bits
+    capabilities: smp vsyscall32
+  *-core
+       description: Motherboard
+       physical id: 0
+     *-memory
+          description: System memory
+          physical id: 0
+          size: 64GiB
+     *-cpu
+          product: Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz
+          vendor: Intel Corp.
+          physical id: 1
+          bus info: cpu@0
+          version: 6.158.10
+          size: 800MHz
+          capacity: 4600MHz
+          width: 64 bits
+          capabilities: fpu fpu_exception wp vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp x86-64 constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb invpcid_single pti ssbd ibrs ibpb stibp tpr_shadow vnmi flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm mpx rdseed adx smap clflushopt intel_pt xsaveopt xsavec xgetbv1 xsaves dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp flush_l1d cpufreq
+          configuration: microcode=150
+
+
+===

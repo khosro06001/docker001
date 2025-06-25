@@ -1,0 +1,78 @@
+# SLM001 Quantized Chatbot - Quick Start Guide
+Generated: 2025-06-22 22:26:30
+
+## 🚀 Quick Start
+
+### For Jetson Nano (ARM64):
+```bash
+docker pull khosro123/slm001-quantized-chatbot:jetson
+docker run -it --rm khosro123/slm001-quantized-chatbot:jetson
+```
+
+### For other devices (AMD64/ARM64):
+```bash
+docker pull khosro123/slm001-quantized-chatbot:latest
+docker run -it --rm khosro123/slm001-quantized-chatbot:latest
+```
+
+### With GPU support (if available):
+```bash
+docker run -it --rm --gpus all khosro123/slm001-quantized-chatbot:latest
+```
+
+## 💬 Available Commands in Chatbot:
+| Command | Description |
+|---------|-------------|
+| `models` | Show available quantized models |
+| `switch <model>` | Change model (e.g., "switch distilgpt2") |
+| `stats` | Show model statistics |
+| `memory` | Show memory usage |
+| `clear` | Clear conversation history |
+| `help` | Show help message |
+| `quit` | Exit chatbot |
+
+## 🤖 Available Models:
+| Model | Size | Best For | Quantization |
+|-------|------|----------|-------------|
+| DialoGPT-small | ~30MB | Jetson Nano | 4-bit |
+| DistilGPT2 | ~80MB | General use | 8-bit |
+| GPT2 | ~125MB | Better quality | 8-bit |
+| DialoGPT-medium | ~90MB | Conversations | 4-bit |
+| TinyLlama-1.1B | ~280MB | Modern chat | 4-bit |
+
+## ✨ Features:
+- ✅ Intelligent quantization fallback (bitsandbytes → PyTorch native)
+- ✅ Optimized for 4GB RAM devices (Jetson Nano)
+- ✅ Real-time model switching without restart
+- ✅ Memory-efficient conversation handling
+- ✅ Multi-architecture support (AMD64/ARM64)
+- ✅ Automatic model downloading and caching
+
+## 🔧 Advanced Usage:
+
+### Custom memory limits:
+```bash
+docker run -it --rm --memory=3g khosro123/slm001-quantized-chatbot:latest
+```
+
+### Mount custom cache directory:
+```bash
+docker run -it --rm -v ./cache:/app/cache khosro123/slm001-quantized-chatbot:latest
+```
+
+### Run with specific model:
+```bash
+docker run -it --rm khosro123/slm001-quantized-chatbot:latest
+# Then in chatbot: switch microsoft/DialoGPT-small
+```
+
+## 🆘 Troubleshooting:
+- **Out of memory**: Try DialoGPT-small or DistilGPT2
+- **Slow on Jetson**: Use 4-bit quantized models
+- **CUDA errors**: Fallback to CPU-only mode works automatically
+- **Model download fails**: Check internet connection
+
+## 📞 Support:
+- Check Docker logs: `docker logs <container_id>`
+- GitHub issues: [Your repository URL here]
+- Built: 2025-06-22 22:26:30

@@ -1,0 +1,221 @@
+########################
+RUN OLLAMA SERVE AS ROOT
+
+|
+|
+|
+V
+
+root# ollama serve
+
+########################
+
+===
+I'll modify your script to use the MiniCPM-V model through Ollama instead of loading it directly from Hugging Face. This will be much simpler and more reliable since you already have the model downloaded.I've completely rewritten your script to use Ollama instead of loading the model directly. Here are the key changes:
+
+## Key Features:
+
+1. **Ollama Integration**: Uses Ollama's REST API to communicate with your locally downloaded MiniCPM-V model
+2. **Connection Testing**: Automatically tests connection to Ollama server and checks for available models
+3. **Model Detection**: Automatically detects if MiniCPM-V is available and suggests alternatives
+4. **Interactive Mode**: Option to select from available vision models if the default doesn't work
+5. **Image Processing**: Handles image encoding to base64 and optimization for better performance
+
+## Usage:
+
+First, make sure Ollama is running:
+```bash
+ollama serve
+```
+
+Then run the script:
+```bash
+python vlm001_ollama.py /path/to/your/image.jpg
+```
+
+## Additional Options:
+
+```bash
+# Custom question
+python vlm001_ollama.py image.jpg --question "What objects are in this image?"
+
+# Specify model name if different
+python vlm001_ollama.py image.jpg --model minicpm-v:latest
+
+# Interactive model selection
+python vlm001_ollama.py image.jpg --interactive
+
+# Verbose output
+python vlm001_ollama.py image.jpg --verbose
+
+# Different Ollama server/port
+python vlm001_ollama.py image.jpg --url http://localhost:11434
+```
+
+## What you need to do:
+
+1. **Make sure Ollama is running**: `ollama serve`
+2. **Check your model name**: Run `ollama list` to see what the exact name of your MiniCPM-V model is
+3. **Run the script**: If the default model name doesn't work, use `--interactive` to select the correct one
+
+The script will automatically handle image encoding, server communication, and provide helpful error messages if something goes wrong. It's much simpler and more reliable than downloading the model through Hugging Face!
+
+
+============================
+
+
+
+The Ollama server is crashing due to memory issues (likely out of memory - OOM). This is common when trying to process large images with vision models. Let me modify the script to handle this better by reducing the image size and adding better error handling.Now let's also add some additional troubleshooting advice:Now try these steps:
+
+1. **First, restart Ollama server:**
+```bash
+pkill ollama
+ollama serve
+```
+
+2. **Try with the updated script (it will use smaller images):**
+```bash
+python3 vlm_ollama_script.py test_vlm/test_image.jpg
+```
+
+3. **If it still crashes, try using LLaVA instead (which might be more stable):**
+```bash
+python3 vlm_ollama_script.py test_vlm/test_image.jpg --model llava:latest
+```
+
+4. **If you're still having issues, try CPU-only mode:**
+```bash
+# In one terminal:
+CUDA_VISIBLE_DEVICES="" ollama serve
+
+# In another terminal:
+python3 vlm_ollama_script.py test_vlm/test_image.jpg
+```
+
+The main changes I made:
+- **Smaller images**: Reduced max size to 512px and lower JPEG quality
+- **Simplified payload**: Removed options that might cause compatibility issues
+- **Better error handling**: Catches connection errors and timeouts
+- **Warning system**: Warns if the image is still too large
+
+The server crash you're seeing is likely due to the MiniCPM-V model running out of memory when processing large images. The updated script should help prevent this.
+
+===
+
+(venv_tests) k@family:~/docker/tests/vlm001$ !2036
+
+python3 vlm_ollama_script.py test_vlm/test_image.jpg --model llava:latest
+
+2025-06-24 20:29:57,435 - INFO - Initializing Ollama captioner with model: llava:latest
+2025-06-24 20:29:57,437 - ERROR - ✗ Cannot connect to Ollama server
+2025-06-24 20:29:57,437 - ERROR - Make sure Ollama is running with: ollama serve
+2025-06-24 20:29:57,437 - INFO - 
+============================================================
+2025-06-24 20:29:57,437 - INFO - OLLAMA TROUBLESHOOTING GUIDE
+2025-06-24 20:29:57,437 - INFO - ============================================================
+2025-06-24 20:29:57,437 - INFO - 1. Make sure Ollama is running:
+2025-06-24 20:29:57,437 - INFO -    ollama serve
+2025-06-24 20:29:57,437 - INFO - 
+2025-06-24 20:29:57,437 - INFO - 2. Check if MiniCPM-V is installed:
+2025-06-24 20:29:57,437 - INFO -    ollama list
+2025-06-24 20:29:57,437 - INFO - 
+2025-06-24 20:29:57,437 - INFO - 3. Install MiniCPM-V if not present:
+2025-06-24 20:29:57,437 - INFO -    ollama pull minicpm-v
+2025-06-24 20:29:57,437 - INFO -    # or
+2025-06-24 20:29:57,437 - INFO -    ollama pull minicpm-v:latest
+2025-06-24 20:29:57,437 - INFO - 
+2025-06-24 20:29:57,437 - INFO - 4. Test the model:
+2025-06-24 20:29:57,437 - INFO -    ollama run minicpm-v
+2025-06-24 20:29:57,437 - INFO - 
+2025-06-24 20:29:57,437 - INFO - 5. Check Ollama status:
+2025-06-24 20:29:57,437 - INFO -    curl http://localhost:11434/api/tags
+2025-06-24 20:29:57,437 - INFO - 
+2025-06-24 20:29:57,437 - INFO - 6. If using different port, use --port argument
+2025-06-24 20:29:57,437 - INFO - ============================================================
+
+(venv_tests) k@family:~/docker/tests/vlm001$ python3 vlm_ollama_script.py test_vlm/test_image.jpg --model llava:latest
+
+===
+
+Since Llava runs fine but MiniCPM-V crashes, this suggests the issue is specific to the MiniCPM-V model rather than Ollama itself. Here are some targeted solutions:
+
+## Memory/Resource Issue
+MiniCPM-V (5.5 GB) might be running out of memory. Check your system resources:
+```bash
+# Check available memory
+free -h
+
+# Check GPU memory if using GPU
+nvidia-smi  # if using NVIDIA GPU
+```
+
+## Try Running with Limited Resources
+Force CPU-only mode or limit memory usage:
+```bash
+# Run with CPU only
+OLLAMA_NUM_GPU=0 ollama run minicpm-v:latest
+
+# Or set memory limits
+OLLAMA_MAX_LOADED_MODELS=1 ollama run minicpm-v:latest
+```
+
+## Model Corruption Check
+The model might be corrupted. Try re-downloading:
+```bash
+# Remove the current model
+ollama rm minicpm-v:latest
+
+# Re-download it
+ollama pull minicpm-v:latest
+
+# Then try running again
+ollama run minicpm-v:latest
+```
+
+## Check Ollama Logs During Crash
+Run this in one terminal to monitor logs:
+```bash
+# Watch Ollama logs
+journalctl -u ollama -f
+```
+
+Then in another terminal, try running the model and see what error appears in the logs.
+
+## Alternative: Try Different MiniCPM-V Version
+```bash
+# Try a different tag if available
+ollama pull minicpm-v:8b
+ollama run minicpm-v:8b
+```
+
+## System Resource Monitoring
+Monitor resources while starting the model:
+```bash
+# In one terminal
+htop
+
+# In another terminal
+ollama run minicpm-v:latest
+```
+
+Since you downloaded MiniCPM-V just 19 hours ago, it's likely a resource constraint issue. What's your system's RAM and GPU setup? That would help narrow down the solution.
+
+===
+
+example:
+
+ollama run llava "What's in this image?" --image /path/to/your/image.jpg
+
+ollama run llava  "What's in this image?"  --image  /home/k/docker/tests/vlm001/test_vlm/test_image.jpg
+
+===
+
+With ollama I want to run:
+Llama-3-VILA1.5
+
+What should the commandline command be?
+ollama run llama3-vila1.5
+
+
+
+Please describe this image: /home/k/docker/tests/vlm001/test_vlm/test_image.jpg

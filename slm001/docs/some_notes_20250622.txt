@@ -339,3 +339,15 @@ Once you are completely satisfied with `slm001.py`'s functionality on your local
 
 This workflow will significantly streamline your development process for `slm001.py`.
 
+
+===
+
+
+I have a Debian 12 PC with an AMD64 CPU. No GPU.
+
+I have a Jetson Nano, 4GB memory, board with an ARM64 CPU. And 1 GPU.
+
+I have a python script that uses a small Huggingface model to create a local chatbot. This functions well on my Debian 12 PC.
+
+===
+

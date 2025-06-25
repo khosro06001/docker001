@@ -1,0 +1,76 @@
+#!/bin/bash
+
+# Test script for running image captioning locally on Debian PC
+# This will run WITHOUT GPU on CPU (for testing basic functionality)
+
+set -e
+
+echo "=== Testing VLM Image Captioning Locally ==="
+echo "Date: $(date)"
+echo "Platform: $(uname -a)"
+
+# Create test directory
+TEST_DIR="./test_vlm"
+mkdir -p "$TEST_DIR"
+
+# Check if we have a test image, if not download one
+TEST_IMAGE="$TEST_DIR/test_image.jpg"
+if [ ! -f "$TEST_IMAGE" ]; then
+    echo "Downloading test image..."
+    curl -o "$TEST_IMAGE" "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Vd-Orig.png/256px-Vd-Orig.png" || {
+        echo "Failed to download test image. Please place a test image at $TEST_IMAGE"
+        exit 1
+    }
+fi
+
+echo "Test image: $TEST_IMAGE"
+
+# Check Python dependencies
+echo "Checking Python environment..."
+python3 -c "import torch; print(f'PyTorch version: {torch.__version__}')" || {
+    echo "PyTorch not found. Installing dependencies..."
+    pip3 install torch torchvision transformers pillow psutil gputil bitsandbytes accelerate
+}
+
+# Test internet connectivity to Hugging Face
+echo "Testing connectivity to Hugging Face Hub..."
+if ! curl -s --connect-timeout 10 https://huggingface.co > /dev/null; then
+    echo "Warning: Cannot reach huggingface.co"
+    echo "Please check your internet connection"
+    echo "You may need to:"
+    echo "1. Check firewall settings"
+    echo "2. Try using a VPN if behind corporate firewall"
+    echo "3. Set up offline mode if needed"
+    read -p "Continue anyway? (y/N): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        exit 1
+    fi
+fi
+
+# Set environment variables for better download handling
+export HF_HUB_DOWNLOAD_TIMEOUT=300
+export TRANSFORMERS_OFFLINE=0
+
+# Check if vlm001.py exists
+if [ ! -f "vlm001.py" ]; then
+    echo "Error: vlm001.py not found in current directory"
+    exit 1
+fi
+
+# Make script executable
+chmod +x vlm001.py
+
+echo ""
+echo "=== Running Image Captioning Test ==="
+echo "Note: This may take several minutes on first run (model download)"
+echo "Press Ctrl+C to cancel"
+echo ""
+
+# Run the captioning script
+python3 vlm001.py "$TEST_IMAGE" --verbose
+
+echo ""
+echo "=== Test completed ==="
+echo "If you see a caption above, the basic functionality is working!"
+echo "Note: Performance will be much faster on Jetson Nano with GPU acceleration."
