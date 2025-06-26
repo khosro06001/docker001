@@ -1,0 +1,19 @@
+[2025-06-25 22:02:48] INFO: Starting build and deployment process...
+[2025-06-25 22:02:48] INFO: Checking prerequisites...
+[2025-06-25 22:02:48] INFO: Running: docker --version
+[2025-06-25 22:02:48] INFO: Docker found: Docker version 28.2.2, build e6534b4
+[2025-06-25 22:02:48] INFO: Running: docker buildx version
+[2025-06-25 22:02:48] INFO: Docker buildx found: github.com/docker/buildx v0.24.0 d0e5e86
+[2025-06-25 22:02:48] INFO: Running: docker info | grep Username
+[2025-06-25 22:02:48] INFO: Docker login verified
+[2025-06-25 22:02:48] INFO: Creating missing files if needed...
+[2025-06-25 22:02:48] INFO: Setting up Docker buildx...
+[2025-06-25 22:02:48] INFO: Running: docker buildx create --name gemma2-builder --use
+[2025-06-25 22:02:48] INFO: Running: docker buildx inspect --bootstrap
+[2025-06-25 22:02:48] INFO: Running: docker buildx inspect --bootstrap | grep Platforms
+[2025-06-25 22:02:48] INFO: Available platforms: Platforms:             linux/amd64, linux/amd64/v2, linux/amd64/v3, linux/386
+[2025-06-25 22:02:48] INFO: Building for platforms: linux/amd64, linux/arm64
+[2025-06-25 22:02:48] INFO: Starting multi-architecture build...
+[2025-06-25 22:02:48] INFO: Running: docker buildx build --platform linux/amd64,linux/arm64 --push -t docker.io/gemma2-chatbot:latest -f Dockerfile .
+[2025-06-25 22:02:49] ERROR: Command failed: Command 'docker buildx build --platform linux/amd64,linux/arm64 --push -t docker.io/gemma2-chatbot:latest -f Dockerfile .' returned non-zero exit status 1.
+[2025-06-25 22:02:49] ERROR: Unexpected error: Command 'docker buildx build --platform linux/amd64,linux/arm64 --push -t docker.io/gemma2-chatbot:latest -f Dockerfile .' returned non-zero exit status 1.

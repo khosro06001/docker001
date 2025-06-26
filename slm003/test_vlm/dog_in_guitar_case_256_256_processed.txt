@@ -1,0 +1,21 @@
+
+(venv_tests) k@family:~/docker/tests/vlm001$ python3 vlm_ollama_script.py test_vlm/test_image.jpg --model llava:latest
+
+2025-06-24 20:30:05,739 - INFO - Initializing Ollama captioner with model: llava:latest
+2025-06-24 20:30:06,207 - INFO - ✓ Connected to Ollama server
+2025-06-24 20:30:06,207 - INFO - Available models: ['deepseek-r1:1.5b', 'deepseek-r1:7b', 'deepseek-r1:8b', 'llama2:latest', 'llama3:8b', 'llama3:latest', 'llava:latest', 'minicpm-v:latest', 'tinyllama:latest']
+2025-06-24 20:30:06,207 - INFO - ✓ Model 'llava:latest' is available
+2025-06-24 20:30:06,207 - INFO - Generating caption...
+2025-06-24 20:30:06,207 - INFO - Processing image: test_vlm/test_image.jpg
+2025-06-24 20:30:06,214 - INFO - Image encoded successfully (size: 14820 chars)
+2025-06-24 20:30:06,214 - INFO - Sending request to Ollama...
+2025-06-24 20:31:07,205 - INFO - Caption generated successfully
+
+==================================================
+IMAGE CAPTION:
+==================================================
+In the center of a wooden floor, there's a small brown and white dog resting inside an open guitar case. The guitar case is black and has "Gibson" written on it in white letters, indicating the brand of the instrument. The dog appears to be looking out from the case with its ears perked up. Next to the guitar case, there's a dog bed, suggesting that this might be the dog's resting spot when not inside the guitar case. The overall scene gives a sense of comfort and playfulness in the home environment.
+==================================================
+
+(venv_tests) k@family:~/docker/tests/vlm001$
+

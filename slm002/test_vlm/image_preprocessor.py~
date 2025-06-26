@@ -1,0 +1,148 @@
+#!/usr/bin/env python3
+"""
+Image Preprocessing Script for VLM Processing
+Converts images to a format that's more compatible with Ollama/MiniCPM-V
+"""
+
+import argparse
+from PIL import Image
+import os
+from pathlib import Path
+
+def preprocess_image(input_path, output_path=None, max_size=256, quality=85, format_type='PNG'):
+    """
+    Preprocess image to make it more compatible with VLM processing
+    
+    Args:
+        input_path: Path to input image
+        output_path: Path for output image (if None, adds _processed suffix)
+        max_size: Maximum dimension size
+        quality: JPEG quality (70-95 recommended)
+        format_type: Output format ('PNG' or 'JPEG')
+    """
+    
+    input_path = Path(input_path)
+    
+    if output_path is None:
+        stem = input_path.stem
+        suffix = '.png' if format_type.upper() == 'PNG' else '.jpg'
+        output_path = input_path.parent / f"{stem}_processed{suffix}"
+    
+    print(f"Processing: {input_path}")
+    print(f"Output: {output_path}")
+    
+    try:
+        # Open and process image
+        with Image.open(input_path) as img:
+            print(f"Original: {img.size}, mode: {img.mode}, format: {img.format}")
+            
+            # Convert to RGB if necessary (removes alpha channel, CMYK, etc.)
+            if img.mode != 'RGB':
+                print(f"Converting from {img.mode} to RGB")
+                img = img.convert('RGB')
+            
+            # Resize if too large
+            if max(img.size) > max_size:
+                original_size = img.size
+                img.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
+                print(f"Resized from {original_size} to {img.size}")
+            
+            # Save with optimized settings
+            save_kwargs = {
+                'format': format_type.upper(),
+                'optimize': True
+            }
+            
+            if format_type.upper() == 'JPEG':
+                save_kwargs.update({
+                    'quality': quality,
+                    'progressive': False,  # Disable progressive encoding
+                    'exif': b''  # Remove EXIF data
+                })
+            elif format_type.upper() == 'PNG':
+                save_kwargs.update({
+                    'compress_level': 6  # Good compression without being too slow
+                })
+            
+            img.save(output_path, **save_kwargs)
+            
+            # Verify the output
+            with Image.open(output_path) as verify_img:
+                print(f"Processed: {verify_img.size}, mode: {verify_img.mode}, format: {verify_img.format}")
+                
+                # Check file size
+                file_size = os.path.getsize(output_path)
+                print(f"File size: {file_size:,} bytes ({file_size/1024:.1f} KB)")
+                
+        print("✓ Image preprocessing completed successfully")
+        return str(output_path)
+        
+    except Exception as e:
+        print(f"✗ Error processing image: {e}")
+        return None
+
+def batch_preprocess(directory, pattern="*.jpg", **kwargs):
+    """Batch process images in a directory"""
+    directory = Path(directory)
+    
+    if not directory.exists():
+        print(f"Directory not found: {directory}")
+        return
+    
+    # Find matching files
+    files = list(directory.glob(pattern))
+    if not files:
+        print(f"No files matching '{pattern}' found in {directory}")
+        return
+    
+    print(f"Found {len(files)} files to process")
+    
+    for file_path in files:
+        print(f"\n--- Processing {file_path.name} ---")
+        result = preprocess_image(file_path, **kwargs)
+        if result:
+            print(f"✓ Saved to: {result}")
+        else:
+            print(f"✗ Failed to process: {file_path}")
+
+def main():
+    parser = argparse.ArgumentParser(description='Preprocess images for VLM compatibility')
+    parser.add_argument('input', help='Input image file or directory')
+    parser.add_argument('-o', '--output', help='Output file path')
+    parser.add_argument('-s', '--size', type=int, default=256, 
+                       help='Maximum image dimension (default: 256)')
+    parser.add_argument('-q', '--quality', type=int, default=85,
+                       help='JPEG quality 1-100 (default: 85)')
+    parser.add_argument('-f', '--format', choices=['PNG', 'JPEG'], default='PNG',
+                       help='Output format (default: PNG)')
+    parser.add_argument('-b', '--batch', action='store_true',
+                       help='Batch process directory')
+    parser.add_argument('-p', '--pattern', default='*.jpg',
+                       help='File pattern for batch processing (default: *.jpg)')
+    
+    args = parser.parse_args()
+    
+    if args.batch:
+        batch_preprocess(
+            args.input, 
+            pattern=args.pattern,
+            max_size=args.size,
+            quality=args.quality,
+            format_type=args.format
+        )
+    else:
+        result = preprocess_image(
+            args.input,
+            args.output,
+            max_size=args.size,
+            quality=args.quality,
+            format_type=args.format
+        )
+        
+        if result:
+            print(f"\n✓ Processed image saved to: {result}")
+        else:
+            print("\n✗ Failed to process image")
+
+if __name__ == "__main__":
+    main()

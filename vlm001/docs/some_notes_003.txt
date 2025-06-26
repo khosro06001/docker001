@@ -369,6 +369,17 @@ THEN:
 # Run with your test image
 docker run --rm -it --network host \
   -v /home/k/docker/tests/vlm001/test_vlm:/app/data \
+  khosro123/vlm-ollama-captioning:latest \
+  python3 vlm_ollama_minicpm-v.py /app/data/test_image.jpg \
+  --question "Describe this image in greatest detail please."
+
+
+
+exit
+exit
+# Run with your test image
+docker run --rm -it --network host \
+  -v /home/k/docker/tests/vlm001/test_vlm:/app/data \
   your-dockerhub-username/vlm-ollama-captioning:latest \
   python3 vlm_ollama_minicpm-v.py /app/data/test_image.jpg \
   --question "Describe this image in greatest detail please."
@@ -385,3 +396,171 @@ docker run --rm -it --network host \
 
 ===
 
+Hi.
+I think, I need a smaller version of llava!
+I have a Jetson Nano 4GB memory, ARM64 chip.
+I have installed ollama.
+I am running
+$ ollama serve.
+I have:
+
+k@aiad:~$ ollama list
+NAME            ID              SIZE      MODIFIED       
+llava:latest    8dd30f6b0cb1    4.7 GB    12 minutes ago
+
+I tried to run
+$ ollama run llava
+But the model is too big and it crashed.
+(The system also crashed with minicpm-v:8b)
+
+Please suggest a smaller llava model, if available.
+
+If not available, suggest something smaller but similar please, that is likely to successfully run!
+
+===
+
+Perfect! Now I understand. NVIDIA has confirmed that `nvidia-smi` is not supported on Jetson devices because they use integrated GPUs (iGPUs) rather than discrete GPUs. 
+
+Here are the replacement tools for monitoring your Jetson Nano:
+
+**1. `tegrastats` (Built-in NVIDIA tool):**
+```bash
+# Basic usage
+sudo tegrastats
+
+# With custom interval (e.g., every 2 seconds)
+sudo tegrastats --interval 2000
+
+# Log to file
+sudo tegrastats --logfile gpu_stats.log
+```
+
+**2. `jtop` (Recommended - like htop for Jetson):**
+This is the ultimate tool for monitoring NVIDIA Jetson devices and provides a graphical representation of system stats.
+
+Install it:
+```bash
+# Install jetson-stats package
+sudo apt update
+sudo apt install python3-pip
+sudo pip3 install jetson-stats
+
+# Reboot to start the service
+sudo reboot
+```
+
+After reboot, use:
+```bash
+# Interactive monitoring (like htop)
+jtop
+
+# Or just check GPU status
+jtop --json
+```
+
+**3. Check CUDA installation:**
+```bash
+# Check CUDA version
+cat /usr/local/cuda/version.txt
+
+
+k@aiad:~$ cat /usr/local/cuda/version.txt
+CUDA Version 10.2.300
+
+
+# Or check nvcc (should work now)
+/usr/local/cuda/bin/nvcc --version
+
+
+k@aiad:~$ cat /usr/local/cuda/version.txt
+CUDA Version 10.2.300
+k@aiad:~$ /usr/local/cuda/bin/nvcc --version
+nvcc: NVIDIA (R) Cuda compiler driver
+Copyright (c) 2005-2021 NVIDIA Corporation
+Built on Sun_Feb_28_22:34:44_PST_2021
+Cuda compilation tools, release 10.2, V10.2.300
+Build cuda_10.2_r440.TC440_70.29663091_0
+
+
+
+# Add CUDA to PATH if needed
+echo 'export PATH=/usr/local/cuda/bin:$PATH' >> ~/.bashrc
+echo 'export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH' >> ~/.bashrc
+source ~/.bashrc
+```
+
+**Now test Ollama with GPU monitoring:**
+```bash
+# Terminal 1: Start monitoring
+jtop
+
+# Terminal 2: Run Ollama
+OLLAMA_DEBUG=1 ollama serve
+
+# Terminal 3: Try your model
+ollama run llava-phi3:3.8b-mini-q4_0
+```
+
+With `jtop` running, you'll see real-time GPU usage, memory consumption, and temperature. This will tell you if Ollama is actually using the GPU!
+
+===
+
+
+
+Interesting! You have CUDA 10.2 installed but no `/dev/nvidia*` devices, which is actually normal for Jetson Nano since it uses an integrated GPU, not a discrete one.
+
+**Let's check Jetson-specific GPU devices:**
+```bash
+# Check Tegra GPU devices (correct for Jetson)
+ls /dev/nvhost-*
+
+# Check if GPU is accessible
+cat /sys/kernel/debug/clk/gbus/clk_rate
+
+# Check Tegra GPU info
+sudo cat /sys/kernel/debug/tegra_gpu/load
+```
+
+**Now let's test Ollama with proper GPU support:**
+
+**Terminal 1 (GPU monitoring):**
+```bash
+sudo tegrastats
+```
+
+**Terminal 2 (Ollama with debug):**
+```bash
+# Make sure CUDA is in PATH
+export PATH=/usr/local/cuda/bin:$PATH
+export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+
+# Start Ollama with debug to see GPU detection
+OLLAMA_DEBUG=1 ollama serve
+```
+
+**Terminal 3 (test model):**
+```bash
+# Try the smallest vision model
+ollama run llava-phi3:3.8b-mini-q4_0
+```
+
+**Look for these indicators in tegrastats:**
+- `GR3D_FREQ` - GPU frequency (should increase)
+- `EMC_FREQ` - Memory controller frequency  
+- `GPU` usage percentage
+- Memory usage increasing
+
+**If it's still struggling, try an even smaller model:**
+```bash
+# Ultra-light vision model
+ollama pull moondream
+
+# Or test with text-only first
+ollama pull phi3:3.8b-mini-q4_0
+ollama run phi3:3.8b-mini-q4_0
+```
+
+What do you see in the OLLAMA_DEBUG output when it starts? Does it mention GPU detection? And what does tegrastats show when you try to load a model?
+
+
+===

@@ -1,0 +1,6 @@
+############ python vlm_ollama_script.py /path/to/your/image.jpg
+
+############ python vlm_ollama_script.py /path/to/your/image.jpg --question "What objects are in this image?"
+
+python3  vlm_ollama_minicpm-v.py  /home/k/docker/tests/vlm001/test_vlm/test_image.jpg  --question "What objects are in this image?"
+

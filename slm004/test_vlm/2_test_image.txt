@@ -1,0 +1,20 @@
+
+(venv_tests) k@family:~/docker/tests/vlm001$ python3 vlm_ollama_script.py test_vlm/test_image.jpg --model llava:latest
+
+2025-06-24 20:25:09,571 - INFO - Initializing Ollama captioner with model: llava:latest
+2025-06-24 20:25:09,575 - INFO - ✓ Connected to Ollama server
+2025-06-24 20:25:09,575 - INFO - Available models: ['deepseek-r1:1.5b', 'deepseek-r1:7b', 'deepseek-r1:8b', 'llama2:latest', 'llama3:8b', 'llama3:latest', 'llava:latest', 'minicpm-v:latest', 'tinyllama:latest']
+2025-06-24 20:25:09,575 - INFO - ✓ Model 'llava:latest' is available
+2025-06-24 20:25:09,575 - INFO - Generating caption...
+2025-06-24 20:25:09,575 - INFO - Processing image: test_vlm/test_image.jpg
+2025-06-24 20:25:09,583 - INFO - Image encoded successfully (size: 7564 chars)
+2025-06-24 20:25:09,583 - INFO - Sending request to Ollama...
+2025-06-24 20:26:17,602 - INFO - Caption generated successfully
+
+==================================================
+IMAGE CAPTION:
+==================================================
+This is an image of a meerkat with a curious expression. The meerkat's fur appears to be light brown or tan, and it has large, black eyes that are wide open, giving it a somewhat surprised look. The background is neutral, which puts the focus on the animal itself. Meerkats are known for their keen senses and expressive faces.
+==================================================
+
+(venv_tests) k@family:~/docker/tests/vlm001$ 

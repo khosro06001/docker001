@@ -1,0 +1,29 @@
+
+# Run with your test image
+docker run --rm -it --network host \
+  -v /home/k/docker/tests/vlm001/test_vlm:/app/data \
+  khosro123/vlm-ollama-captioning:latest \
+  python3 vlm_ollama_minicpm-v.py /app/data/test_image.jpg \
+  --question "Describe this image in great detail to me please."
+
+
+exit
+exit
+
+# Run with your test image
+docker run --rm -it --network host \
+  -v /home/k/docker/tests/vlm001/test_vlm:/app/data \
+  your-dockerhub-username/vlm-ollama-captioning:latest \
+  python3 vlm_ollama_minicpm-v.py /app/data/test_image.jpg \
+  --question "Describe this image in greatest detail please."
+
+
+exit
+exit
+
+# Get shell access to debug
+docker run --rm -it --network host \
+  -v /home/k/docker/tests/vlm001/test_vlm:/app/data \
+  --entrypoint /bin/bash \
+  your-dockerhub-username/vlm-ollama-captioning:latest
+

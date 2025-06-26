@@ -1,0 +1,58 @@
+# Multi-stage Dockerfile for MiniCPM-V Image Captioning via Ollama
+# Supports both AMD64 (for building) and ARM64 (for Jetson Nano)
+
+FROM nvcr.io/nvidia/l4t-ml:r35.2.1-py3 AS base-arm64
+FROM python:3.9-slim AS base-amd64
+
+# Select base image based on target architecture
+FROM base-${TARGETARCH} AS base
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV DEBIAN_FRONTEND=noninteractive
+ENV OLLAMA_HOST=0.0.0.0:11434
+
+# Create app directory and user
+WORKDIR /app
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    git \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application files
+COPY vlm_ollama_minicpm-v.py .
+RUN chmod +x vlm_ollama_minicpm-v.py
+
+# Create data directories
+RUN mkdir -p /app/data /app/images && \
+    chown -R appuser:appuser /app
+
+# Health check
+COPY healthcheck.py .
+HEALTHCHECK --interval=30s --timeout=15s --start-period=120s --retries=3 \
+    CMD python3 healthcheck.py
+
+# Switch to non-root user
+USER appuser
+
+# Expose port (for potential web interface)
+EXPOSE 8080
+
+# Default command - waits for image input
+CMD ["python3", "vlm_ollama_minicpm-v.py", "/app/data/input.jpg", "--question", "Describe this image in detail."]
+
+# Labels
+LABEL maintainer="Khosro <your.email@example.com>"
+LABEL description="MiniCPM-V Image Captioning via Ollama for Multi-Architecture"
+LABEL version="2.0"
+LABEL ollama.required="true"
+LABEL ollama.model="minicpm-v:8b"
